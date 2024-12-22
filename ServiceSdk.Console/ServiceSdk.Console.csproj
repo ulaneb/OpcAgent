@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
@@ -9,12 +9,10 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.Devices" Version="1.40.0" />
-    <PackageReference Include="Microsoft.Azure.Devices.Client" Version="1.42.3" />
-    <PackageReference Include="Opc.UaFx.Client" Version="2.42.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DeviceSdk\DeviceSdk.csproj" />
+    <ProjectReference Include="..\ServiceSdk\ServiceSdk.Lib.csproj" />
   </ItemGroup>
 
 </Project>
