@@ -1,7 +1,9 @@
 ﻿using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
+using Opc.Ua;
 using Opc.UaFx;
+using Opc.UaFx.Client;
 using System.Net.Mime;
 using System.Text;
 
@@ -87,7 +89,12 @@ public class Device
         Console.WriteLine($"\t Desired property change: \n\t {JsonConvert.SerializeObject(desiredProperties)}");
         TwinCollection reportedCollection = new TwinCollection();
         reportedCollection["ProductionRate"] = desiredProperties["ProductionRate"];
-
+        using (var client = new OpcClient("opc.tcp://localhost:4840/"))
+        {
+            client.Connect();
+            client.WriteNode("ns=2;s=Device 1/ProductionRate", (int)desiredProperties["ProductionRate"]);
+            Console.WriteLine($"Updated: {client.ReadNode("ns=2;s=Device 1/ProductionRate")}");
+        }
         await client.UpdateReportedPropertiesAsync(reportedCollection).ConfigureAwait(false);
     }
     public async Task SendMessageWhenValueChanges(int currentErrorValue, int previousDeviceError)
