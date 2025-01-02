@@ -1,8 +1,7 @@
 ﻿using Microsoft.Azure.Devices;
 using ServiceSdk;
-using System;
 
-string serviceConnectionString = "HostName=CenterName.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=4YRYs8K6uxRPIeG05HwzUoFTyowWmu6+nAIoTOxvXnY=";
+string serviceConnectionString = "HostName=IoTHub-UL.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=IefYFsC7NHDKgRH59sCbeUiEbiiIpFiEtAIoTL+GiNY=";
 
 using var serviceClient = ServiceClient.CreateFromConnectionString(serviceConnectionString);
 using var registryManager = RegistryManager.CreateFromConnectionString(serviceConnectionString);

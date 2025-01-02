@@ -1,7 +1,7 @@
-﻿using Microsoft.Azure.Devices.Client;
+﻿using Microsoft.Azure.Amqp.Framing;
+using Microsoft.Azure.Devices.Client;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
-using Opc.Ua;
 using Opc.UaFx;
 using Opc.UaFx.Client;
 using System.Net.Mime;
@@ -18,17 +18,14 @@ public class Device
         this.client = deviceClient;
     }
 
-    private string GetFlagName(int value)
+    [Flags]
+    public enum ErrorFlags
     {
-        switch (value)
-        {
-            case 0: return "None";
-            case 1: return "Emergency Stop";
-            case 2: return "Power Failure";
-            case 4: return "Sensor Failure";
-            case 8: return "Unknown";
-            default: return null;
-        }
+        None = 0,            // 0000
+        EmergencyStop = 1,   // 0001
+        PowerFailure = 2,    // 0010
+        SensorFailure = 4,   // 0100
+        Unknown = 8          // 1000
     }
 
     #region Sending Message (Telemetry) Device to Cloud
@@ -48,7 +45,6 @@ public class Device
                 case 7: telemetryData["Temperature"] = item.Value; break;
                 case 9: telemetryData["GoodCount"] = item.Value; break;
                 case 11: telemetryData["BadCount"] = item.Value; break;
-                //case 13: telemetryData["DeviceError"] = item.Value; break;
                 default: break;
             }
             index++;
@@ -67,7 +63,7 @@ public class Device
     #endregion
 
     #region Device Twin
-    public async Task UpdateTwinAsync(int currentErrorValue,OpcValue productionRate)
+    public async Task UpdateTwinAsync(ErrorFlags currentErrorValue,OpcValue productionRate)
     {
         var twin = await client.GetTwinAsync();
         Console.WriteLine($"\n Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
@@ -76,8 +72,8 @@ public class Device
         var reportedProperties = new TwinCollection();
         reportedProperties["DeviceError"] = new
         {
-            Value = currentErrorValue,
-            Description = GetFlagName(currentErrorValue)
+            Value = (int)currentErrorValue,
+            Description = currentErrorValue.ToString()
         };
         reportedProperties["ProductionRate"] = productionRate.Value.ToString();
 
@@ -93,14 +89,15 @@ public class Device
         {
             client.Connect();
             client.WriteNode("ns=2;s=Device 1/ProductionRate", (int)desiredProperties["ProductionRate"]);
+            client.WriteNode("ns=2;s=Device 1/DeviceError", (int)desiredProperties["DeviceError"].Value);
             Console.WriteLine($"Updated: {client.ReadNode("ns=2;s=Device 1/ProductionRate")}");
         }
         await client.UpdateReportedPropertiesAsync(reportedCollection).ConfigureAwait(false);
     }
-    public async Task SendMessageWhenValueChanges(int currentErrorValue, int previousDeviceError)
+    public async Task SendMessageWhenValueChanges(ErrorFlags currentErrorValue, ErrorFlags previousDeviceError)
     {
         Console.WriteLine($"Change value - device sending message to IoTHub...\n");
-        Message eventMessage = new Message(Encoding.UTF8.GetBytes($"Device Error value changes from {GetFlagName(currentErrorValue)} to {GetFlagName(previousDeviceError)}"));
+        Message eventMessage = new Message(Encoding.UTF8.GetBytes($"Device Error value changes from {currentErrorValue.ToString()} to {previousDeviceError.ToString()}"));
         eventMessage.ContentType = MediaTypeNames.Application.Json;
         eventMessage.ContentEncoding = "utf-8";
 
@@ -110,12 +107,38 @@ public class Device
     }
     #endregion
 
+    #region Direct Methods - uruchomienie serwisu zdalnie z clouda
+    private async Task<MethodResponse> EmergencyStopHandler(MethodRequest methodRequest, object userContext)
+    {
+        Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
+        var payload = JsonConvert.DeserializeAnonymousType(methodRequest.DataAsJson, new { deviceNumber = default(int) });
+
+        using (var client = new OpcClient("opc.tcp://localhost:4840/"))
+        {
+            client.Connect();
+            client.WriteNode($"ns=2;s=Device 1/DeviceError",1);
+        }
+        await UpdateTwinAsync(ErrorFlags.EmergencyStop, "ns=2;s=Device 1/DeviceError");
+        return new MethodResponse(0);
+    }
+    private async Task<MethodResponse> ResetErrorStatusHandler(MethodRequest methodRequest, object userContext)
+    {
+        Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
+        var payload = JsonConvert.DeserializeAnonymousType(methodRequest.DataAsJson, new { deviceNumber = default(int) });
+        using (var client = new OpcClient("opc.tcp://localhost:4840/"))
+        {
+            client.Connect();
+            client.WriteNode($"ns=2;s=Device 1/DeviceError", 0);
+        }
+        await UpdateTwinAsync(ErrorFlags.None, "ns=2;s=Device 1/DeviceError");
+        return new MethodResponse(0);
+    }
+    #endregion
+
     public async Task InitializeHandlers()
     {
-        //await client.SetReceiveMessageHandlerAsync(OnC2DMessageReceivedAsync, client);
-
-        //await client.SetMethodHandlerAsync("SendMessage", SendMessageHandler, client);
-        //await client.SetMethodDefaultHandlerAsync(DefaultServiceHandler, client);
+        await client.SetMethodHandlerAsync("EmergencyStop", EmergencyStopHandler, client);
+        await client.SetMethodHandlerAsync("ResetErrorStatus", ResetErrorStatusHandler, client);
 
         await client.SetDesiredPropertyUpdateCallbackAsync(OnDesiredPropertyChange, client);
     }

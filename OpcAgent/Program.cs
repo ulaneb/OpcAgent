@@ -1,16 +1,16 @@
 ﻿using Opc.UaFx;
 using Opc.UaFx.Client;
-
 using Microsoft.Azure.Devices.Client;
 using DeviceSdk;
+using static DeviceSdk.Device;
 
-const string deviceConnectionString = "HostName=CenterName.azure-devices.net;DeviceId=OpcDeviceSdk1;SharedAccessKey=r51seffyASoR0kfHuaAdDNAaxjRLB71PfbjniJlzuVE=";
+const string deviceConnectionString = "HostName=IoTHub-UL.azure-devices.net;DeviceId=DeviceSdk1;SharedAccessKey=SEMBqdvDXSTwj7epKW1rrZkAZTKM+b+mRrNEtqaGjgQ=";
 using var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt);
 await deviceClient.OpenAsync();
 var device = new Device(deviceClient);
 await device.InitializeHandlers();
 
-int previousDeviceError = 0;
+ErrorFlags previousDeviceError = 0;
 
 using (var client = new OpcClient("opc.tcp://localhost:4840/"))
 {
@@ -44,7 +44,7 @@ using (var client = new OpcClient("opc.tcp://localhost:4840/"))
 
         await device.SendMessage(job);
 
-        var currentErrorValue = Convert.ToInt32(job.ElementAt(13).Value);
+        ErrorFlags currentErrorValue = (ErrorFlags)job.ElementAt(13).Value;
 
         if (currentErrorValue != previousDeviceError)
         {
@@ -55,5 +55,6 @@ using (var client = new OpcClient("opc.tcp://localhost:4840/"))
 
             previousDeviceError = currentErrorValue;
         }
+        Task.Delay(3000);
     }
 }
