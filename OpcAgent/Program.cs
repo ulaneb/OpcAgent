@@ -3,8 +3,13 @@ using Opc.UaFx.Client;
 using Microsoft.Azure.Devices.Client;
 using DeviceSdk;
 using static DeviceSdk.Device;
+using System.Text.Json;
 
-const string deviceConnectionString = "HostName=IoTHub-UL.azure-devices.net;DeviceId=DeviceSdk1;SharedAccessKey=SEMBqdvDXSTwj7epKW1rrZkAZTKM+b+mRrNEtqaGjgQ=";
+var jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sharedsettings.json");
+var json = File.ReadAllText(jsonPath);
+var config = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
+var deviceConnectionString = config["ConnectionStrings"]["DeviceConnectionString"];
+
 using var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt);
 await deviceClient.OpenAsync();
 var device = new Device(deviceClient);

@@ -5,11 +5,16 @@ VisualStudioVersion = 17.3.32825.248
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpcAgent", "OpcAgent\OpcAgent.csproj", "{3C6438D4-DD7F-4536-854F-2D3A5EB9BBF5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeviceSdk", "DeviceSdk\DeviceSdk.csproj", "{82E96315-7CCC-489E-BEFF-588E49E408E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeviceSdk", "DeviceSdk\DeviceSdk.csproj", "{82E96315-7CCC-489E-BEFF-588E49E408E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceSdk.Lib", "ServiceSdk\ServiceSdk.Lib.csproj", "{D4997BEC-B65C-4E72-8A46-56E8BE83A5D4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceSdk.Lib", "ServiceSdk\ServiceSdk.Lib.csproj", "{D4997BEC-B65C-4E72-8A46-56E8BE83A5D4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceSdk.Console", "ServiceSdk.Console\ServiceSdk.Console.csproj", "{2FFE75B2-5D0D-45F6-8715-72F36811C120}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServiceSdk.Console", "ServiceSdk.Console\ServiceSdk.Console.csproj", "{2FFE75B2-5D0D-45F6-8715-72F36811C120}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{D9CE9D43-4289-431F-A53B-4D162568719C}"
+	ProjectSection(SolutionItems) = preProject
+		sharedsettings.json = sharedsettings.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,7 +1,11 @@
 ﻿using Microsoft.Azure.Devices;
 using ServiceSdk;
+using System.Text.Json;
 
-string serviceConnectionString = "HostName=IoTHub-UL.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=IefYFsC7NHDKgRH59sCbeUiEbiiIpFiEtAIoTL+GiNY=";
+var jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sharedsettings.json");
+var json = File.ReadAllText(jsonPath);
+var config = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
+var serviceConnectionString = config["ConnectionStrings"]["ServiceConnectionString"];
 
 using var serviceClient = ServiceClient.CreateFromConnectionString(serviceConnectionString);
 using var registryManager = RegistryManager.CreateFromConnectionString(serviceConnectionString);

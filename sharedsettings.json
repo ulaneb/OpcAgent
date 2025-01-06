@@ -1,0 +1,6 @@
+{
+  "ConnectionStrings": {
+    "DeviceConnectionString": "HostName=IoTHub-UL.azure-devices.net;DeviceId=DeviceSdk1;SharedAccessKey=SEMBqdvDXSTwj7epKW1rrZkAZTKM+b+mRrNEtqaGjgQ=",
+    "ServiceConnectionString": "HostName=IoTHub-UL.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=IefYFsC7NHDKgRH59sCbeUiEbiiIpFiEtAIoTL+GiNY="
+  }
+}

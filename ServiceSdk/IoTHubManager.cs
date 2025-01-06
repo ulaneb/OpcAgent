@@ -1,4 +1,6 @@
 ﻿using Microsoft.Azure.Devices;
+using System.Net.Mail;
+using System.Net;
 
 namespace ServiceSdk;
 
