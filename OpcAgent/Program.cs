@@ -1,21 +1,5 @@
 ﻿using Opc.UaFx;
 using Opc.UaFx.Client;
-using Microsoft.Azure.Devices.Client;
-using DeviceSdk;
-using static DeviceSdk.Device;
-using System.Text.Json;
-
-var jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sharedsettings.json");
-var json = File.ReadAllText(jsonPath);
-var config = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
-var deviceConnectionString = config["ConnectionStrings"]["DeviceConnectionString"];
-
-using var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt);
-await deviceClient.OpenAsync();
-var device = new Device(deviceClient);
-await device.InitializeHandlers();
-
-ErrorFlags previousDeviceError = 0;
 
 using (var client = new OpcClient("opc.tcp://localhost:4840/"))
 {
@@ -37,29 +21,10 @@ using (var client = new OpcClient("opc.tcp://localhost:4840/"))
         new OpcReadNode("ns=2;s=Device 1/DeviceError", OpcAttribute.DisplayName),
         new OpcReadNode("ns=2;s=Device 1/DeviceError"),
     };
+    IEnumerable<OpcValue> job = client.ReadNodes(commands);
 
-    Console.WriteLine("Sending telemetry from device to cloud...\n");
-    while(true){
-        IEnumerable<OpcValue> job = client.ReadNodes(commands);
-    
-        //foreach (var item in job)
-        //{
-        //    Console.WriteLine(item.Value);
-        //}
-
-        await device.SendMessage(job);
-
-        ErrorFlags currentErrorValue = (ErrorFlags)job.ElementAt(13).Value;
-
-        if (currentErrorValue != previousDeviceError)
-        {
-            Console.WriteLine("Device Error Changes");
-
-            await device.UpdateTwinAsync(currentErrorValue, job.ElementAt(3));
-            await device.SendMessageWhenValueChanges(currentErrorValue, previousDeviceError);
-
-            previousDeviceError = currentErrorValue;
-        }
-        Task.Delay(3000);
+    foreach (var item in job)
+    {
+        Console.WriteLine(item.Value);
     }
 }
