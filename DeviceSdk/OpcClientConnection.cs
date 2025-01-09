@@ -10,11 +10,11 @@ class OpcClientConnection
     public OpcClientConnection(string nodeId)
     {
         this.client = new OpcClient("opc.tcp://localhost:4840/");
-        client.Connect();
         this.nodeId = nodeId;
     }
     public IEnumerable<OpcValue> GetNodes()
     {
+        client.Connect();
         OpcReadNode[] commands = new OpcReadNode[] {
         new OpcReadNode($"ns=2;s={nodeId}/ProductionStatus", OpcAttribute.DisplayName),
         new OpcReadNode($"ns=2;s={nodeId}/ProductionStatus"),
@@ -31,6 +31,8 @@ class OpcClientConnection
         new OpcReadNode($"ns=2;s={nodeId}/DeviceError", OpcAttribute.DisplayName),
         new OpcReadNode($"ns=2;s={nodeId}/DeviceError")
         };
-        return client.ReadNodes(commands);
+        var result = client.ReadNodes(commands);
+        client.Disconnect();
+        return result;
     }
 }

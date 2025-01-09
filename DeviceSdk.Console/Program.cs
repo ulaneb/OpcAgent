@@ -1,7 +1,6 @@
 ﻿using DeviceSdk;
 using Microsoft.Azure.Devices.Client;
 using System.Text.Json;
-using static DeviceSdk.VirtualDevice;
 using Opc.UaFx;
 using Opc.UaFx.Client;
 using TransportType = Microsoft.Azure.Devices.Client.TransportType;
@@ -38,14 +37,7 @@ while (true)
     
         await device.ReadNodesAsync();
         await device.SendMessage();
-        var currentErrorValue = (ErrorFlags)device.job.ElementAt(13).Value;
-        if (currentErrorValue != device.previousDeviceError)
-        {
-            Console.WriteLine("Device Error Changes");
-
-            await device.UpdateTwinAsync(currentErrorValue, device.job.ElementAt(3));
-            await device.SendMessageWhenValueChanges(currentErrorValue, device.previousDeviceError);
-        }
+        await device.UpdateTwinAsync();
     }
     Task.Delay(3000);
 }
