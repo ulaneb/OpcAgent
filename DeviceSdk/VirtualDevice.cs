@@ -1,12 +1,10 @@
 ﻿using Microsoft.Azure.Devices.Client;
-using Microsoft.Azure.Devices.Common.Exceptions;
 using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
 using Opc.UaFx;
 using Opc.UaFx.Client;
 using OpcAgent;
 using System.Net.Mime;
-using System.Net.Sockets;
 using System.Text;
 
 namespace DeviceSdk;
@@ -16,16 +14,18 @@ public class VirtualDevice
     private readonly DeviceClient client;
     private readonly OpcNodeInfo opcNodeInfo;
     private readonly OpcClientConnection opcClientConnection;
+    private readonly OpcClient opcClient;
     private readonly string nodeId;
 
     public IEnumerable<OpcValue> job;
     public ErrorFlags previousDeviceError = 0;
 
-    public VirtualDevice(DeviceClient deviceClient, string nodeId)
+    public VirtualDevice(DeviceClient deviceClient, string nodeId, OpcClient opcClient)
     {
         this.client = deviceClient;
         this.nodeId = nodeId;
         this.opcClientConnection = new OpcClientConnection(nodeId);
+        this.opcClient = opcClient;
     }
 
     [Flags]
@@ -142,21 +142,17 @@ public class VirtualDevice
     #endregion
 
     #region Direct Methods - uruchomienie serwisu zdalnie z clouda
-    private async Task<MethodResponse> EmergencyStopHandler(MethodRequest methodRequest, object userContext)
+    private async Task<MethodResponse> MethodHandler(MethodRequest methodRequest, object userContext)
     {
         Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
-        int updatedErrorValue;
-        using (var client = new OpcClient("opc.tcp://localhost:4840/"))
+        var result = opcClient.CallMethod($"ns=2;s={nodeId}", $"ns=2;s={nodeId}/{methodRequest.Name}");
+        if (result != null)
         {
-            client.Connect();
-            var currentError = client.ReadNode($"ns=2;s={nodeId}/DeviceError");
-            int currentErrorValue = Convert.ToInt32(currentError.Value);
-            updatedErrorValue = currentErrorValue | (int)VirtualDevice.ErrorFlags.EmergencyStop;
-            client.WriteNode($"ns=2;s={nodeId}/DeviceError", Convert.ToInt32(updatedErrorValue));
+            Console.WriteLine("Success");
         }
-        TwinCollection reportedCollection = new TwinCollection();
-        reportedCollection["DeviceError"] = ((ErrorFlags)updatedErrorValue).ToString();
-        await client.UpdateReportedPropertiesAsync(reportedCollection).ConfigureAwait(false);
+        else
+            Console.WriteLine("failed");
+        await Task.Delay(1000);
         return new MethodResponse(0);
     }
     private async Task<MethodResponse> ResetErrorStatusHandler(MethodRequest methodRequest, object userContext)
@@ -168,8 +164,8 @@ public class VirtualDevice
 
     public async Task InitializeHandlers()
     {
-        await client.SetMethodHandlerAsync("EmergencyStop", EmergencyStopHandler, client);
-        await client.SetMethodHandlerAsync("ResetErrorStatus", ResetErrorStatusHandler, client);
+        await client.SetMethodHandlerAsync("EmergencyStop", MethodHandler, client);
+        await client.SetMethodHandlerAsync("ResetErrorStatus", MethodHandler, client);
 
         await client.SetDesiredPropertyUpdateCallbackAsync(OnDesiredPropertyChange, client);
     }

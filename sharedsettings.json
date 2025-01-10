@@ -4,8 +4,8 @@
     "Device 2": "",
     "Device 3": "",
     "Service": "",
-    "StorageAccount": "",
-    "ProductionKpisContainer": "",
-    "Prefix": ""
+    "ServiceBus": "",
+    "ProductionKpiQueueName": "",
+    "TemperatureQueueName": ""
   }
 }

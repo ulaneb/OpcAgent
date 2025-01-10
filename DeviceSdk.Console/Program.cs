@@ -24,7 +24,7 @@ foreach (var childNode in client.BrowseNode(OpcObjectTypes.ObjectsFolder).Childr
 
     var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt);
     await deviceClient.OpenAsync();
-    var device = new VirtualDevice(deviceClient,nodeId);
+    var device = new VirtualDevice(deviceClient,nodeId,client);
     devices.Add(device);
 }
 while (true)
