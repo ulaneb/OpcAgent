@@ -6,6 +6,11 @@
     "Service": "",
     "ServiceBus": "",
     "ProductionKpiQueueName": "",
-    "DeviceErrorsQueueName": ""
+    "DeviceErrorsQueueName": "",
+    "EmailCommunicationService": ""
+  },
+  "EmailAddress": {
+    "Sender": "",
+    "Receiver": ""
   }
 }

@@ -6,6 +6,8 @@ using Opc.UaFx.Client;
 using OpcAgent;
 using System.Net.Mime;
 using System.Text;
+using Azure.Communication.Email;
+using Azure;
 
 namespace DeviceSdk;
 
@@ -16,16 +18,25 @@ public class VirtualDevice
     private readonly OpcClientConnection opcClientConnection;
     private readonly OpcClient opcClient;
     private readonly string nodeId;
+    private readonly string senderAddress;
+    private readonly EmailClient senderClient;
+    private readonly string sender;
+    private readonly string receiverAddress;
+    private readonly EmailRecipients receiver;
 
     public IEnumerable<OpcValue> job;
     public ErrorFlags previousDeviceError = 0;
 
-    public VirtualDevice(DeviceClient deviceClient, string nodeId, OpcClient opcClient)
+    public VirtualDevice(DeviceClient deviceClient, string nodeId, OpcClient opcClient, string senderAddress, string receiverAddress, string sender)
     {
         this.client = deviceClient;
         this.nodeId = nodeId;
         this.opcClientConnection = new OpcClientConnection(nodeId);
         this.opcClient = opcClient;
+        this.senderAddress = senderAddress;
+        senderClient = new EmailClient(senderAddress);
+        this.receiverAddress = receiverAddress;
+        this.sender = sender;
     }
 
     [Flags]
@@ -88,6 +99,8 @@ public class VirtualDevice
                 };
                 await SendMessage(errorData);
                 Console.WriteLine($"{errorData}");
+                await SendMessageToEmailsAsync(currentErrorValue-previousDeviceError);
+                Console.WriteLine("Email sent");
             }
 
             var changingData = new
@@ -142,6 +155,28 @@ public class VirtualDevice
         eventMessage.ContentEncoding = "utf-8";
 
         await client.SendEventAsync(eventMessage);
+    }
+    #endregion
+
+    #region Sending Email
+    private async Task SendMessageToEmailsAsync(int error)
+    {
+        try
+        {
+            var subject = $"New error occurs on {nodeId}";
+            var body = ((ErrorFlags)error).ToString();
+
+            EmailContent emailContent = new EmailContent(subject);
+            emailContent.PlainText = body;
+            EmailMessage emailMessage = new EmailMessage(sender, receiverAddress, emailContent);
+            
+            EmailSendOperation emailSendOperation = await senderClient.SendAsync(Azure.WaitUntil.Completed, emailMessage);
+            Console.WriteLine($"{DateTime.Now}: Notification about an error has been sent successfully.");
+        }
+        catch (RequestFailedException ex)
+        {
+            throw new RequestFailedException("Invalid email sender username. Please use a username from the list of valid usernames configured by your admin.");
+        }
     }
     #endregion
 

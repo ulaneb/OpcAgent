@@ -34,12 +34,12 @@ deviceErrorsProcessor.ProcessErrorAsync += Process_ErrorAsync;
 #endregion
 
 #region Starting Processors
-await productionKpiProcessor.StartProcessingAsync();
+//await productionKpiProcessor.StartProcessingAsync();
 await deviceErrorsProcessor.StartProcessingAsync();
 Console.WriteLine("Waiting for messages... Press Enter to stop");
 Console.ReadLine();
 Console.WriteLine("\nStopping receiving messages");
-await productionKpiProcessor.StopProcessingAsync();
+//await productionKpiProcessor.StopProcessingAsync();
 await deviceErrorsProcessor.StopProcessingAsync();
 #endregion
 
