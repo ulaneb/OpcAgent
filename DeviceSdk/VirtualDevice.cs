@@ -44,7 +44,7 @@ public class VirtualDevice
     }
 
     #region Sending Message (Telemetry) Device to Cloud
-    public async Task SendMessage()
+    public async Task SendTelemetry()
     {
         Console.WriteLine($"Device sending message to IoTHub...\n");
         var telemetryData = new
@@ -56,14 +56,8 @@ public class VirtualDevice
             GoodCount = job.ElementAt(9).Value,
             BadCount = job.ElementAt(11).Value
         };
-
-        var dataString = JsonConvert.SerializeObject(telemetryData);
-        Microsoft.Azure.Devices.Client.Message eventMessage = new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(dataString));
-        eventMessage.ContentType = MediaTypeNames.Application.Json;
-        eventMessage.ContentEncoding = "utf-8";
-
-        await client.SendEventAsync(eventMessage);
-        Console.WriteLine($"\t {DateTime.Now.ToLocalTime()} > Sending message: Data [{dataString}");
+        await SendMessage(telemetryData);
+        Console.WriteLine($"\t {DateTime.Now.ToLocalTime()} > Sending message: Data [{telemetryData}");
 
         await Task.Delay(5000);
     }
@@ -76,16 +70,32 @@ public class VirtualDevice
         Console.WriteLine($"\n Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
         Console.WriteLine();
 
-        var reportedProperties = new TwinCollection();
         var currentErrorValue = (ErrorFlags)job.ElementAt(13).Value;
-        reportedProperties["DeviceError"] = currentErrorValue.ToString();
-        reportedProperties["ProductionRate"] = job.ElementAt(3).Value.ToString();
+
+        var reportedProperties = new TwinCollection {
+            ["DeviceError"] = (int)currentErrorValue, ///!!! currentErrorValue.ToString(),
+            ["ProductionRate"] = job.ElementAt(3).Value.ToString()
+        };
 
         if (currentErrorValue != previousDeviceError)
         {
             Console.WriteLine("Device Error Changes");
+            if (currentErrorValue > previousDeviceError)
+            {
+                var errorData = new
+                {
+                    IsNewError = 1
+                };
+                await SendMessage(errorData);
+                Console.WriteLine($"{errorData}");
+            }
 
-            await SendMessageWhenValueChanges(currentErrorValue, previousDeviceError);
+            var changingData = new
+            {
+                Message = $"Device error has changed from {previousDeviceError} to {currentErrorValue}"
+            };
+            await SendMessage(changingData);
+            Console.WriteLine($"Reported Twin Updated: {changingData}");
 
             previousDeviceError = currentErrorValue;
         }
@@ -93,51 +103,17 @@ public class VirtualDevice
         await client.UpdateReportedPropertiesAsync(reportedProperties);
         Console.WriteLine("Device Twin updated.");
     }
+
     private async Task OnDesiredPropertyChange(TwinCollection desiredProperties, object userContext)
     {
         Console.WriteLine($"\t Desired property change: \n\t {JsonConvert.SerializeObject(desiredProperties)}");
         TwinCollection reportedCollection = new TwinCollection();
         reportedCollection["ProductionRate"] = desiredProperties["ProductionRate"];
-        using (var client = new OpcClient("opc.tcp://localhost:4840/"))
-        {
-            client.Connect();
-            client.WriteNode($"ns=2;s={nodeId}/ProductionRate", (int)desiredProperties["ProductionRate"]);
-            Console.WriteLine($"Updated: {client.ReadNode($"ns=2;s={nodeId}/ProductionRate")}");
-        }
+        opcClient.Connect();
+        opcClient.WriteNode($"ns=2;s={nodeId}/ProductionRate", (int)desiredProperties["ProductionRate"]);
+        Console.WriteLine($"Updated: {opcClient.ReadNode($"ns=2;s={nodeId}/ProductionRate")}");
+
         await client.UpdateReportedPropertiesAsync(reportedCollection).ConfigureAwait(false);
-    }
-    public async Task SendMessageWhenValueChanges(ErrorFlags currentErrorValue, ErrorFlags previousDeviceError)
-    {
-        Console.WriteLine($"Change value - device sending message to IoTHub...\n");
-        var data = new
-        {
-            ErrorName = currentErrorValue.ToString(),
-            NewErrors = NewErrorsCounter((int)currentErrorValue),
-            DeviceName = nodeId,
-            CurrentErrors = currentErrorValue.ToString()
-        };
-        var dataString = JsonConvert.SerializeObject(data);
-        Microsoft.Azure.Devices.Client.Message eventMessage = new Microsoft.Azure.Devices.Client.Message(Encoding.UTF8.GetBytes(dataString));
-        eventMessage.ContentType = MediaTypeNames.Application.Json;
-        eventMessage.ContentEncoding = "utf-8";
-
-        await client.SendEventAsync(eventMessage);
-
-        await Task.Delay(5000);
-    }
-    private int NewErrorsCounter(int errorCode)
-    {
-        int difference = errorCode - (int)previousDeviceError;
-        if (difference <= 0) return 0;
-
-        ErrorFlags error = (ErrorFlags)difference;
-        return new[]
-        {
-            ErrorFlags.EmergencyStop,
-            ErrorFlags.PowerFailure,
-            ErrorFlags.SensorFailure,
-            ErrorFlags.Unknown
-        }.Count(flag => error.HasFlag(flag));
     }
     #endregion
 
@@ -151,14 +127,21 @@ public class VirtualDevice
             Console.WriteLine("Success");
         }
         else
-            Console.WriteLine("failed");
+            Console.WriteLine("Failed");
         await Task.Delay(1000);
         return new MethodResponse(0);
     }
-    private async Task<MethodResponse> ResetErrorStatusHandler(MethodRequest methodRequest, object userContext)
+    #endregion
+
+    #region Sending Message
+    private async Task SendMessage(object data)
     {
-        //TODO
-        return new MethodResponse(0);
+        var dataString = JsonConvert.SerializeObject(data);
+        Message eventMessage = new Message(Encoding.UTF8.GetBytes(dataString));
+        eventMessage.ContentType = MediaTypeNames.Application.Json;
+        eventMessage.ContentEncoding = "utf-8";
+
+        await client.SendEventAsync(eventMessage);
     }
     #endregion
 
@@ -168,13 +151,5 @@ public class VirtualDevice
         await client.SetMethodHandlerAsync("ResetErrorStatus", MethodHandler, client);
 
         await client.SetDesiredPropertyUpdateCallbackAsync(OnDesiredPropertyChange, client);
-    }
-    public async ValueTask DisposeAsync()
-    {
-        if (client != null)
-        {
-            await client.CloseAsync();
-            client.Dispose();
-        }
     }
 }

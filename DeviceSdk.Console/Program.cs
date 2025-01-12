@@ -25,18 +25,17 @@ foreach (var childNode in client.BrowseNode(OpcObjectTypes.ObjectsFolder).Childr
     var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt);
     await deviceClient.OpenAsync();
     var device = new VirtualDevice(deviceClient,nodeId,client);
+    await device.InitializeHandlers();
     devices.Add(device);
 }
 while (true)
 {
     foreach (var device in devices)
     {
-        await device.InitializeHandlers();
-
         Console.WriteLine("Sending telemetry from device to cloud...\n");
     
         await device.ReadNodesAsync();
-        await device.SendMessage();
+        await device.SendTelemetry();
         await device.UpdateTwinAsync();
     }
     Task.Delay(3000);

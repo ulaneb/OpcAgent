@@ -6,6 +6,6 @@
     "Service": "",
     "ServiceBus": "",
     "ProductionKpiQueueName": "",
-    "TemperatureQueueName": ""
+    "DeviceErrorsQueueName": ""
   }
 }

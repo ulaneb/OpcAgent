@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DeviceSdk\DeviceSdk.csproj" />
     <ProjectReference Include="..\ServiceBus.Lib\ServiceBus.Lib.csproj" />
   </ItemGroup>
 
