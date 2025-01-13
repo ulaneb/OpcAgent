@@ -34,13 +34,16 @@ deviceErrorsProcessor.ProcessErrorAsync += Process_ErrorAsync;
 #endregion
 
 #region Starting Processors
-//await productionKpiProcessor.StartProcessingAsync();
-await deviceErrorsProcessor.StartProcessingAsync();
+var productionKpiProcessorTask = productionKpiProcessor.StartProcessingAsync();
+var deviceErrorsProcessorTask = deviceErrorsProcessor.StartProcessingAsync();
 Console.WriteLine("Waiting for messages... Press Enter to stop");
+await Task.WhenAll(productionKpiProcessorTask, deviceErrorsProcessorTask);
 Console.ReadLine();
 Console.WriteLine("\nStopping receiving messages");
-//await productionKpiProcessor.StopProcessingAsync();
-await deviceErrorsProcessor.StopProcessingAsync();
+var stopProductionKpiProcessorTask = productionKpiProcessor.StopProcessingAsync();
+var stopDeviceErrorsProcessorTask = deviceErrorsProcessor.StopProcessingAsync();
+
+await Task.WhenAll(stopProductionKpiProcessorTask, stopDeviceErrorsProcessorTask);
 #endregion
 
 
@@ -48,10 +51,7 @@ async Task Processor_ProcessMessageAsync(ProcessMessageEventArgs arg)
 {
     Console.WriteLine($"Received message: \n\t {arg.Message.Body}\n");
     var productionData = JsonSerializer.Deserialize<ProductionData>(arg.Message.Body.ToString());
-    if (productionData.ProcentOfGoodProduction < 90)
-    {
-        manager.DecreaseProductionRateDesiredTwin(productionData.DeviceId);
-    }
+    manager.DecreaseProductionRateDesiredTwin(productionData.DeviceId);
     await arg.CompleteMessageAsync(arg.Message);
 }
 
@@ -78,7 +78,7 @@ async Task TriggerEmergencyStop(string deviceId)
 {
     try
     {
-        var methodInvocation = new CloudToDeviceMethod("EmergencyStop") // The method name must match the device's implementation
+        var methodInvocation = new CloudToDeviceMethod("EmergencyStop")
         {
             ResponseTimeout = TimeSpan.FromSeconds(30)
         };

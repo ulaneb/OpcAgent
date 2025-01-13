@@ -14,15 +14,13 @@ namespace DeviceSdk;
 public class VirtualDevice
 {
     private readonly DeviceClient client;
-    private readonly OpcNodeInfo opcNodeInfo;
     private readonly OpcClientConnection opcClientConnection;
     private readonly OpcClient opcClient;
     private readonly string nodeId;
-    private readonly string senderAddress;
+    private readonly string emailConnectionString;
     private readonly EmailClient senderClient;
-    private readonly string sender;
+    private readonly string senderAddress;
     private readonly string receiverAddress;
-    private readonly EmailRecipients receiver;
 
     public IEnumerable<OpcValue> job;
     public ErrorFlags previousDeviceError = 0;
@@ -33,10 +31,10 @@ public class VirtualDevice
         this.nodeId = nodeId;
         this.opcClientConnection = new OpcClientConnection(nodeId);
         this.opcClient = opcClient;
-        this.senderAddress = senderAddress;
+        this.emailConnectionString = senderAddress;
         senderClient = new EmailClient(senderAddress);
         this.receiverAddress = receiverAddress;
-        this.sender = sender;
+        this.senderAddress = sender;
     }
 
     [Flags]
@@ -69,8 +67,6 @@ public class VirtualDevice
         };
         await SendMessage(telemetryData);
         Console.WriteLine($"\t {DateTime.Now.ToLocalTime()} > Sending message: Data [{telemetryData}");
-
-        await Task.Delay(5000);
     }
     #endregion
 
@@ -84,7 +80,7 @@ public class VirtualDevice
         var currentErrorValue = (ErrorFlags)job.ElementAt(13).Value;
 
         var reportedProperties = new TwinCollection {
-            ["DeviceError"] = (int)currentErrorValue, ///!!! currentErrorValue.ToString(),
+            ["DeviceError"] = (int)currentErrorValue,
             ["ProductionRate"] = job.ElementAt(3).Value.ToString()
         };
 
@@ -137,11 +133,10 @@ public class VirtualDevice
         var result = opcClient.CallMethod($"ns=2;s={nodeId}", $"ns=2;s={nodeId}/{methodRequest.Name}");
         if (result != null)
         {
-            Console.WriteLine("Success");
+            Console.WriteLine($"Success: {methodRequest.Name}");
         }
         else
-            Console.WriteLine("Failed");
-        await Task.Delay(1000);
+            Console.WriteLine($"Failed: {methodRequest.Name}");
         return new MethodResponse(0);
     }
     #endregion
@@ -168,14 +163,14 @@ public class VirtualDevice
 
             EmailContent emailContent = new EmailContent(subject);
             emailContent.PlainText = body;
-            EmailMessage emailMessage = new EmailMessage(sender, receiverAddress, emailContent);
+            EmailMessage emailMessage = new EmailMessage(senderAddress, receiverAddress, emailContent);
             
             EmailSendOperation emailSendOperation = await senderClient.SendAsync(Azure.WaitUntil.Completed, emailMessage);
             Console.WriteLine($"{DateTime.Now}: Notification about an error has been sent successfully.");
         }
         catch (RequestFailedException ex)
         {
-            throw new RequestFailedException("Invalid email sender username. Please use a username from the list of valid usernames configured by your admin.");
+            throw new RequestFailedException("Invalid email sender username.");
         }
     }
     #endregion
