@@ -3,7 +3,6 @@ using Microsoft.Azure.Devices.Shared;
 using Newtonsoft.Json;
 using Opc.UaFx;
 using Opc.UaFx.Client;
-using OpcAgent;
 using System.Net.Mime;
 using System.Text;
 using Azure.Communication.Email;
@@ -14,7 +13,6 @@ namespace DeviceSdk;
 public class VirtualDevice
 {
     private readonly DeviceClient client;
-    private readonly OpcClientConnection opcClientConnection;
     private readonly OpcClient opcClient;
     private readonly string nodeId;
     private readonly string emailConnectionString;
@@ -29,7 +27,6 @@ public class VirtualDevice
     {
         this.client = deviceClient;
         this.nodeId = nodeId;
-        this.opcClientConnection = new OpcClientConnection(nodeId);
         this.opcClient = opcClient;
         this.emailConnectionString = senderAddress;
         senderClient = new EmailClient(senderAddress);
@@ -49,7 +46,17 @@ public class VirtualDevice
 
     public async Task ReadNodesAsync()
     {
-        job = opcClientConnection.GetNodes();
+        opcClient.Connect();
+        OpcReadNode[] commands = new OpcReadNode[] {
+        new OpcReadNode($"ns=2;s={nodeId}/ProductionStatus"),
+        new OpcReadNode($"ns=2;s={nodeId}/ProductionRate"),
+        new OpcReadNode($"ns=2;s={nodeId}/WorkorderId"),
+        new OpcReadNode($"ns=2;s={nodeId}/Temperature"),
+        new OpcReadNode($"ns=2;s={nodeId}/GoodCount"),
+        new OpcReadNode($"ns=2;s={nodeId}/BadCount"),
+        new OpcReadNode($"ns=2;s={nodeId}/DeviceError")
+        };
+        job = opcClient.ReadNodes(commands);
     }
 
     #region Sending Message (Telemetry) Device to Cloud
@@ -59,11 +66,11 @@ public class VirtualDevice
         var telemetryData = new
         {
             DeviceName = nodeId,
-            ProductionStatus = job.ElementAt(1).Value,
-            WorkorderId = job.ElementAt(5).Value,
-            Temperature = job.ElementAt(7).Value,
-            GoodCount = job.ElementAt(9).Value,
-            BadCount = job.ElementAt(11).Value
+            ProductionStatus = job.ElementAt(0).Value,
+            WorkorderId = job.ElementAt(2).Value,
+            Temperature = job.ElementAt(3).Value,
+            GoodCount = job.ElementAt(4).Value,
+            BadCount = job.ElementAt(5).Value
         };
         await SendMessage(telemetryData);
         Console.WriteLine($"\t {DateTime.Now.ToLocalTime()} > Sending message: Data [{telemetryData}");
@@ -77,11 +84,11 @@ public class VirtualDevice
         Console.WriteLine($"\n Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
         Console.WriteLine();
 
-        var currentErrorValue = (ErrorFlags)job.ElementAt(13).Value;
+        var currentErrorValue = (ErrorFlags)job.ElementAt(6).Value;
 
         var reportedProperties = new TwinCollection {
             ["DeviceError"] = (int)currentErrorValue,
-            ["ProductionRate"] = job.ElementAt(3).Value.ToString()
+            ["ProductionRate"] = job.ElementAt(1).Value.ToString()
         };
 
         if (currentErrorValue != previousDeviceError)

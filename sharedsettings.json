@@ -1,5 +1,6 @@
 {
   "ConnectionStrings": {
+    "OpcServer": "",
     "Device 1": "",
     "Device 2": "",
     "Device 3": "",

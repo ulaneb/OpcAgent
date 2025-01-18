@@ -10,13 +10,14 @@ var jsonPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "sharedsettin
 var json = File.ReadAllText(jsonPath);
 var config = JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(json);
 
+string opcServerConnectionString = config["ConnectionStrings"]["OpcServer"];
 string emailConnectionString = config["ConnectionStrings"]["EmailCommunicationService"];
 string senderAddress = config["EmailAddress"]["Sender"];
 string receiverAddress = config["EmailAddress"]["Receiver"];
 
 List<VirtualDevice> devices = new List<VirtualDevice>();
 
-var client = new OpcClient("opc.tcp://localhost:4840/");
+var client = new OpcClient(opcServerConnectionString);
 client.Connect();
 foreach (var childNode in client.BrowseNode(OpcObjectTypes.ObjectsFolder).Children())
 {
@@ -28,7 +29,7 @@ foreach (var childNode in client.BrowseNode(OpcObjectTypes.ObjectsFolder).Childr
 
     var deviceClient = DeviceClient.CreateFromConnectionString(deviceConnectionString, TransportType.Mqtt);
     await deviceClient.OpenAsync();
-    var device = new VirtualDevice(deviceClient,nodeId,client, emailConnectionString, receiverAddress,senderAddress);
+    var device = new VirtualDevice(deviceClient, nodeId, client, emailConnectionString, receiverAddress, senderAddress);
     await device.InitializeHandlers();
     devices.Add(device);
 }
