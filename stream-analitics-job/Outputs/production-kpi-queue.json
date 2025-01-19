@@ -1,0 +1,19 @@
+{
+  "Name": "production-kpi-queue",
+  "DataSourceType": "Service Bus Queue",
+  "ServiceBusQueueProperties": {
+    "ServiceBusNamespace": "service-bus-ul",
+    "QueueName": "device-errors-queue",
+    "SharedAccessPolicyName": "RootManageSharedAccessKey",
+    "SharedAccessPolicyKey": "********",
+    "PropertyColumns": [],
+    "SystemPropertyColumns": {}
+  },
+  "DataSourceCredentialDomain": "92e48144-111f-40e9-9dfb-fb1e480a2542.StreamAnalystics",
+  "Serialization": {
+    "Type": "Json",
+    "Encoding": "UTF8",
+    "Format": "LineSeparated"
+  },
+  "ScriptType": "Output"
+}

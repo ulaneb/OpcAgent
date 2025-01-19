@@ -29,7 +29,7 @@ public class VirtualDevice
         this.nodeId = nodeId;
         this.opcClient = opcClient;
         this.emailConnectionString = senderAddress;
-        senderClient = new EmailClient(senderAddress);
+        this.senderClient = new EmailClient(senderAddress);
         this.receiverAddress = receiverAddress;
         this.senderAddress = sender;
     }
@@ -62,7 +62,7 @@ public class VirtualDevice
     #region Sending Message (Telemetry) Device to Cloud
     public async Task SendTelemetry()
     {
-        Console.WriteLine($"Device sending message to IoTHub...\n");
+        Console.WriteLine($"{nodeId} sending telemetry to IoTHub...\n");
         var telemetryData = new
         {
             DeviceName = nodeId,
@@ -73,7 +73,7 @@ public class VirtualDevice
             BadCount = job.ElementAt(5).Value
         };
         await SendMessage(telemetryData);
-        Console.WriteLine($"\t {DateTime.Now.ToLocalTime()} > Sending message: Data [{telemetryData}");
+        Console.WriteLine($"\t {DateTime.Now.ToLocalTime()} > Sending telemetry: {telemetryData}");
     }
     #endregion
 
@@ -81,8 +81,6 @@ public class VirtualDevice
     public async Task UpdateTwinAsync()
     {
         var twin = await client.GetTwinAsync();
-        Console.WriteLine($"\n Initial twin value received: \n {JsonConvert.SerializeObject(twin, Formatting.Indented)}");
-        Console.WriteLine();
 
         var currentErrorValue = (ErrorFlags)job.ElementAt(6).Value;
 
@@ -93,7 +91,6 @@ public class VirtualDevice
 
         if (currentErrorValue != previousDeviceError)
         {
-            Console.WriteLine("Device Error Changes");
             if (currentErrorValue > previousDeviceError)
             {
                 var errorData = new
@@ -101,23 +98,21 @@ public class VirtualDevice
                     IsNewError = 1
                 };
                 await SendMessage(errorData);
-                Console.WriteLine($"{errorData}");
                 await SendMessageToEmailsAsync(currentErrorValue-previousDeviceError);
-                Console.WriteLine("Email sent");
+                Console.WriteLine("Email has been sent");
             }
 
             var changingData = new
             {
-                Message = $"Device error has changed from {previousDeviceError} to {currentErrorValue}"
+                Message = $"DeviceError has changed from {previousDeviceError} to {currentErrorValue}"
             };
             await SendMessage(changingData);
-            Console.WriteLine($"Reported Twin Updated: {changingData}");
+            Console.WriteLine($"{nodeId}: {changingData}");
 
             previousDeviceError = currentErrorValue;
         }
 
         await client.UpdateReportedPropertiesAsync(reportedProperties);
-        Console.WriteLine("Device Twin updated.");
     }
 
     private async Task OnDesiredPropertyChange(TwinCollection desiredProperties, object userContext)
@@ -127,7 +122,7 @@ public class VirtualDevice
         reportedCollection["ProductionRate"] = desiredProperties["ProductionRate"];
         opcClient.Connect();
         opcClient.WriteNode($"ns=2;s={nodeId}/ProductionRate", (int)desiredProperties["ProductionRate"]);
-        Console.WriteLine($"Updated: {opcClient.ReadNode($"ns=2;s={nodeId}/ProductionRate")}");
+        Console.WriteLine($"ProductionRate has been changed to: {opcClient.ReadNode($"ns=2;s={nodeId}/ProductionRate")}");
 
         await client.UpdateReportedPropertiesAsync(reportedCollection).ConfigureAwait(false);
     }
@@ -136,14 +131,19 @@ public class VirtualDevice
     #region Direct Methods - uruchomienie serwisu zdalnie z clouda
     private async Task<MethodResponse> MethodHandler(MethodRequest methodRequest, object userContext)
     {
-        Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name}");
+        Console.WriteLine($"\t METHOD EXECUTED: {methodRequest.Name} on {nodeId}");
         var result = opcClient.CallMethod($"ns=2;s={nodeId}", $"ns=2;s={nodeId}/{methodRequest.Name}");
         if (result != null)
         {
-            Console.WriteLine($"Success: {methodRequest.Name}");
+            Console.WriteLine($"{methodRequest.Name} successed");
         }
         else
-            Console.WriteLine($"Failed: {methodRequest.Name}");
+            Console.WriteLine($"{methodRequest.Name} failed");
+        return new MethodResponse(0);
+    }
+    private async Task<MethodResponse> DefaultServiceHandler(MethodRequest methodRequest, object userContext)
+    {
+        Console.WriteLine($"\t UNKNOWN METHOD EXECUTED: {methodRequest.Name} on {nodeId}");
         return new MethodResponse(0);
     }
     #endregion
@@ -173,7 +173,6 @@ public class VirtualDevice
             EmailMessage emailMessage = new EmailMessage(senderAddress, receiverAddress, emailContent);
             
             EmailSendOperation emailSendOperation = await senderClient.SendAsync(Azure.WaitUntil.Completed, emailMessage);
-            Console.WriteLine($"{DateTime.Now}: Notification about an error has been sent successfully.");
         }
         catch (RequestFailedException ex)
         {
@@ -186,6 +185,7 @@ public class VirtualDevice
     {
         await client.SetMethodHandlerAsync("EmergencyStop", MethodHandler, client);
         await client.SetMethodHandlerAsync("ResetErrorStatus", MethodHandler, client);
+        await client.SetMethodDefaultHandlerAsync(DefaultServiceHandler, client);
 
         await client.SetDesiredPropertyUpdateCallbackAsync(OnDesiredPropertyChange, client);
     }

@@ -37,8 +37,6 @@ while (true)
 {
     foreach (var device in devices)
     {
-        Console.WriteLine("Sending telemetry from device to cloud...\n");
-    
         await device.ReadNodesAsync();
         await device.SendTelemetry();
         await device.UpdateTwinAsync();

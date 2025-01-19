@@ -1,0 +1,46 @@
+--production-kpis
+SELECT
+    System.Timestamp() AS WindowEndTime,
+    IoTHub.ConnectionDeviceId AS DeviceId,
+    (SUM(GoodCount)*100.0)/SUM(GoodCount+BadCount) AS ProcentOfGoodProduction
+INTO
+    [production-kpi-queue]
+FROM
+    [asa-iothub-ul]
+GROUP BY
+    IoTHub.ConnectionDeviceId,
+    TumblingWindow(minute,5)
+HAVING
+    SUM(GoodCount) + SUM(BadCount) > 0
+    AND ProcentOfGoodProduction < 90;
+
+--temperature
+SELECT
+    System.Timestamp() AS WindowEndTime,
+    IoTHub.ConnectionDeviceId,
+    MIN(Temperature) AS MinTemp, 
+    MAX(Temperature) AS MaxTemp,
+    AVG(Temperature) AS AvgTemp
+INTO
+    [temperature]
+FROM
+    [asa-iothub-ul]
+GROUP BY
+    IoTHub.ConnectionDeviceId,
+    HoppingWindow(minute,5,1);
+
+--device-errors
+SELECT
+    System.Timestamp() AS WindowEndTime,
+    IoTHub.ConnectionDeviceId AS DeviceId,
+    SUM(IsNewError) as OccuredErrors
+INTO
+    [device-errors-queue]
+FROM
+    [asa-iothub-ul]
+WHERE
+    IsNewError is not null
+GROUP BY
+    IoTHub.ConnectionDeviceId,
+    SlidingWindow(minute,1)
+HAVING SUM(IsNewError) > 3;

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "CommunicationServices_communication_service_ul_name": {
+      "value": null
+    },
+    "emailServices_email_communication_service_ul_externalid": {
+      "value": null
+    }
+  }
+}

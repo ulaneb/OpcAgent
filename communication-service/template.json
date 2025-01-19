@@ -1,0 +1,29 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "CommunicationServices_communication_service_ul_name": {
+      "defaultValue": "communication-service-ul",
+      "type": "String"
+    },
+    "emailServices_email_communication_service_ul_externalid": {
+      "defaultValue": "/subscriptions/7a8da113-3a49-44ef-8912-cd40aca46caa/resourceGroups/Resource_Group_UL/providers/Microsoft.Communication/emailServices/email-communication-service-ul",
+      "type": "String"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "type": "Microsoft.Communication/CommunicationServices",
+      "apiVersion": "2023-06-01-preview",
+      "name": "[parameters('CommunicationServices_communication_service_ul_name')]",
+      "location": "global",
+      "properties": {
+        "dataLocation": "Europe",
+        "linkedDomains": [
+          "[concat(parameters('emailServices_email_communication_service_ul_externalid'), '/domains/AzureManagedDomain')]"
+        ]
+      }
+    }
+  ]
+}

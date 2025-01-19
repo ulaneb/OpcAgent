@@ -49,22 +49,27 @@ await Task.WhenAll(stopProductionKpiProcessorTask, stopDeviceErrorsProcessorTask
 
 async Task Processor_ProcessMessageAsync(ProcessMessageEventArgs arg)
 {
-    Console.WriteLine($"Received message: \n\t {arg.Message.Body}\n");
-    var productionData = JsonSerializer.Deserialize<ProductionData>(arg.Message.Body.ToString());
-    manager.DecreaseProductionRateDesiredTwin(productionData.DeviceId);
-    await arg.CompleteMessageAsync(arg.Message);
+    try
+    {
+        Console.WriteLine($"Received message: \n\t {arg.Message.Body}\n");
+        var productionData = JsonSerializer.Deserialize<ProductionData>(arg.Message.Body.ToString());
+        manager.DecreaseProductionRateDesiredTwin(productionData.DeviceId);
+        Console.WriteLine($"ProductionRate has been decreased by 10");
+        await arg.CompleteMessageAsync(arg.Message);
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error processing message: {ex.Message}");
+    }
 }
 
 async Task Processor_ProcessTriggerAsync(ProcessMessageEventArgs arg)
 {
     try
     {
-        string messageBody = arg.Message.Body.ToString();
-        Console.WriteLine($"Received message: {messageBody}");
-
+        Console.WriteLine($"Received message: {arg.Message.Body.ToString()}");
         var message = JsonSerializer.Deserialize<ErrorData>(arg.Message.Body.ToString());
         string deviceId = message.DeviceId;
-        Console.WriteLine($"Triggering Emergency Stop for Device ID: {deviceId}");
         await TriggerEmergencyStop(deviceId);
         await arg.CompleteMessageAsync(arg.Message);
     }
@@ -84,11 +89,11 @@ async Task TriggerEmergencyStop(string deviceId)
         };
         var response = await serviceClient.InvokeDeviceMethodAsync(deviceId, methodInvocation);
 
-        Console.WriteLine($"EmergencyStop invoked for {deviceId}.");
+        Console.WriteLine($"EmergencyStop invoked.");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Error invoking EmergencyStop on {deviceId}: {ex.Message}");
+        Console.WriteLine($"Error invoking EmergencyStop: {ex.Message}");
     }
 }
 

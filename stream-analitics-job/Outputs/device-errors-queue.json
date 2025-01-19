@@ -1,0 +1,19 @@
+{
+  "Name": "device-errors-queue",
+  "DataSourceType": "Service Bus Queue",
+  "ServiceBusQueueProperties": {
+    "ServiceBusNamespace": "service-bus-ul",
+    "QueueName": "device-errors-queue",
+    "SharedAccessPolicyName": "RootManageSharedAccessKey",
+    "SharedAccessPolicyKey": "********",
+    "PropertyColumns": [],
+    "SystemPropertyColumns": {}
+  },
+  "DataSourceCredentialDomain": "0e42ff5e-2b92-4871-b351-c518e23f2d72.StreamAnalystics",
+  "Serialization": {
+    "Type": "Json",
+    "Encoding": "UTF8",
+    "Format": "LineSeparated"
+  },
+  "ScriptType": "Output"
+}

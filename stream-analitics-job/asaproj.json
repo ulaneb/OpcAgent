@@ -1,0 +1,26 @@
+{
+    "name": "stream-analitics-job",
+    "startFile": "Transformation.asaql",
+    "configurations": [
+        {
+            "filePath": "JobConfig.json",
+            "subType": "JobConfig"
+        },
+        {
+            "filePath": "Inputs/asa-iothub-ul.json",
+            "subType": "Input"
+        },
+        {
+            "filePath": "Outputs/device-errors-queue.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/production-kpi-queue.json",
+            "subType": "Output"
+        },
+        {
+            "filePath": "Outputs/temperature.json",
+            "subType": "Output"
+        }
+    ]
+}

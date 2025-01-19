@@ -1,0 +1,20 @@
+{
+  "Name": "asa-iothub-ul",
+  "Type": "Data Stream",
+  "DataSourceType": "IoT Hub",
+  "IoTHubProperties": {
+    "IotHubNamespace": "IoTHub-UL",
+    "Endpoint": "messages/events",
+    "SharedAccessPolicyName": "iothubowner",
+    "SharedAccessPolicyKey": "********",
+    "ConsumerGroupName": "$Default"
+  },
+  "DataSourceCredentialDomain": "c6fc1c9c-45ad-4bf7-bf74-c4b4bcba9a34.StreamAnalystics",
+  "Serialization": {
+    "Type": "Json",
+    "Encoding": "UTF8"
+  },
+  "PartitionKey": null,
+  "CompressionType": "None",
+  "ScriptType": "Input"
+}
