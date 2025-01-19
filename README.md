@@ -209,7 +209,11 @@ Program umożliwia wywołanie trzech metod bezpośrednich z urządzenia w IoTHub
       ![obraz](https://github.com/user-attachments/assets/8323d317-241b-4e1e-9216-5dff0d23dd0f)
     * Pojawienia się minimum 4 nowych błędów na urządzeniu w ciągu 1 minuty (opisane w dalszej części dokumentacji)
 
-    W momencie wywołania metody urządzenie zatrzymuje swoje działanie (ustawia wartość ```ProductionStatus``` na 0) oraz kasuje wszystkie dotychczasowo ustawione błędy na urządzeniu na rzecz zaznaczenia opcji ```EmergencyStop```. 
+    W momencie wywołania metody urządzenie zatrzymuje swoje działanie (ustawia wartość ```ProductionStatus``` na 0) oraz kasuje wszystkie dotychczasowo ustawione błędy na urządzeniu na rzecz zaznaczenia opcji ```EmergencyStop```. Jeśli metoda zostanie poprawnie wykonana, w aplikacji IoT Explorer pojawi się wiadomość:
+
+	```
+ 	Successfully invoked method 'EmergencyStop' on device 'DeviceSdk1' with response {"status":0,"payload":null}
+ 	```
 
     Przykładowa wiadomość na konsoli:
 
@@ -235,6 +239,12 @@ Program umożliwia wywołanie trzech metod bezpośrednich z urządzenia w IoTHub
     
     ![obraz](https://github.com/user-attachments/assets/18441e36-591e-487e-95c5-358c0c7c37bf)
 
+ 	Jeśli metoda zostanie poprawnie wykonana, w aplikacji IoT Explorer pojawi się wiadomość:
+
+	```
+ 	Successfully invoked method 'ResetErrorStatus' on device 'DeviceSdk1' with response {"status":0,"payload":null}
+ 	```
+
     Przykładowa wiadomość na konsoli:
 
     ```
@@ -257,6 +267,12 @@ Program umożliwia wywołanie trzech metod bezpośrednich z urządzenia w IoTHub
 
     ![obraz](https://github.com/user-attachments/assets/9c007fa5-0199-4b77-9b6c-6b274fc588c5)
 
+	Jeśli metoda zostanie poprawnie wykonana, w aplikacji IoT Explorer pojawi się wiadomość:
+	
+	```
+	Successfully invoked method 'NewMethod' on device 'DeviceSdk1' with response {"status":0,"payload":null}
+	```
+  
     W przypadku wykonania takiej metody, na konsoli zostanie wyświetlona przykładowo poniższa informacja:
     
     ```
