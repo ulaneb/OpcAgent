@@ -2,12 +2,12 @@
 ### Połączenie z urządzeniem (serwerem OPC UA)
 #### Sposób uruchomienia aplikacji
 Aby uruchomić projekt,
-1.  upewnij się, że masz zainstalowane Visual Studio (wersja 2019 lub nowsza)
-2.  sklonuj repozytorium za pomocą Visual Studio lub wiersza poleceń (Git)
-3.	otwórz plik rozwiązania projektu - ```OpcAgent.sln```
-4.	upewnij się, że wszystkie wymagane pakiety są zainstalowane. W razie potrzeby kliknij Restore NuGet Packages
-5.	kliknij prawym przyciskiem myszy na Solution i wybierz Configure Startup Projects…
-6.	następnie wybierz Multiple startup Project i ustaw akcję Start dla projektów ```ServiceBus.Console``` oraz ```DeviceSdk.Console```
+1.  Upewnij się, że masz zainstalowane Visual Studio (wersja 2019 lub nowsza)
+2.  Sklonuj repozytorium za pomocą Visual Studio lub wiersza poleceń (Git)
+3.	Otwórz plik rozwiązania projektu - ```OpcAgent.sln```
+4.	Upewnij się, że wszystkie wymagane pakiety są zainstalowane. W razie potrzeby kliknij Restore NuGet Packages
+5.	Kliknij prawym przyciskiem myszy na Solution i wybierz Configure Startup Projects…
+6.	Następnie wybierz Multiple startup Project i ustaw akcję Start dla projektów ```ServiceBus.Console``` oraz ```DeviceSdk.Console```
 7.	Aplikację należy uruchomić przyciskiem „Start”.
 
 #### Sposób połączenia z serwerem
@@ -87,7 +87,7 @@ Dla każdego urządzenia agent wysyła opisane poniżej rodzaje wiadomości do I
       "enqueuedTime": "Sat Jan 18 2025 17:04:29 GMT+0100 (czas środkowoeuropejski standardowy)"
     }
     ```
-2.	Informowanie o aktualnym stanie
+2.	Informowanie o aktualnym stanie urządzenia
 
     W przypadku zmiany stanu błędów wysyłana jest pojedyncza wiadomość informująca o poprzednim i aktualnym stanie urządzenia.
     Przykładowa wiadomość na konsoli:
@@ -143,10 +143,64 @@ Rodzaje danych przechowywanych w Device Twin:
 
 Przykładowa zawartość DeviceTwin:
 ```
+{
+	"deviceId": "DeviceSdk2",
+	"etag": "AAAAAAAAAAk=",
+	"deviceEtag": "NzUzNTQ2NDc3",
+	"status": "enabled",
+	"statusUpdateTime": "0001-01-01T00:00:00Z",
+	"connectionState": "Connected",
+	"lastActivityTime": "2025-01-19T13:30:36.4297358Z",
+	"cloudToDeviceMessageCount": 0,
+	"authenticationType": "sas",
+	"x509Thumbprint": {
+		"primaryThumbprint": null,
+		"secondaryThumbprint": null
+	},
+	"modelId": "",
+	"version": 2091,
+	"properties": {
+		"desired": {
+			"ProductionRate": 30,
+			"$metadata": {
+				"$lastUpdated": "2025-01-19T13:35:12.1388554Z",
+				"$lastUpdatedVersion": 9,
+				"ProductionRate": {
+					"$lastUpdated": "2025-01-19T13:35:12.1388554Z",
+					"$lastUpdatedVersion": 9
+				}
+			},
+			"$version": 9
+		},
+		"reported": {
+			"DeviceError": 8,
+			"ProductionRate": "0",
+			"$metadata": {
+				"$lastUpdated": "2025-01-19T13:35:11.7784566Z",
+				"DeviceError": {
+					"$lastUpdated": "2025-01-19T13:35:11.7784566Z",
+					"Description": {
+						"$lastUpdated": "2025-01-09T18:18:54.4868913Z"
+					},
+					"Value": {
+						"$lastUpdated": "2025-01-09T18:18:54.4868913Z"
+					}
+				},
+				"ProductionRate": {
+					"$lastUpdated": "2025-01-19T13:35:11.7784566Z"
+				}
+			},
+			"$version": 2082
+		}
+	},
+	"capabilities": {
+		"iotEdge": false
+	}
+}
 ```
 
 ### Dokumentacja Direct Methods zaimplementowanych w agencie
-Program umożliwia wywołanie dwóch metod bezpośrednich z urządzenia w IoTHub. Są to:
+Program umożliwia wywołanie trzech metod bezpośrednich z urządzenia w IoTHub. Są to:
 1. ```EmergencyStop```
 
     Jest to metoda zatrzymująca działanie urządzenia w przypadku:
@@ -156,23 +210,37 @@ Program umożliwia wywołanie dwóch metod bezpośrednich z urządzenia w IoTHub
     * Pojawienia się minimum 4 nowych błędów na urządzeniu w ciągu 1 minuty (opisane w dalszej części dokumentacji)
 
     W momencie wywołania metody urządzenie zatrzymuje swoje działanie (ustawia wartość ```ProductionStatus``` na 0) oraz kasuje wszystkie dotychczasowo ustawione błędy na urządzeniu na rzecz zaznaczenia opcji ```EmergencyStop```. 
-    
+
+    Przykładowa wiadomość na konsoli:
+
+    ```
+    METHOD EXECUTED: EmergencyStop on Device 1
+    ```
+
     Przykładowy widok z symulatora:
     
       Przed wywołaniem metody:
       
-      ![obraz](https://github.com/user-attachments/assets/87a8a98f-64d8-49e5-8dea-be7a86ee3a45)
+      ![obraz](https://github.com/user-attachments/assets/10fecaf7-0f09-45eb-8d85-1ff8f547ebaf)
       
       Po wywołaniu metody:
+
+      ![obraz](https://github.com/user-attachments/assets/849a0e29-007e-4be4-b0c8-447eeb1471ac)
     
     Aby kontynuować pracę urządzenia, należy wywołać bezpośrednią metodę ```ResetErrorStatus``` opisaną poniżej.
 
-2. ```ResetErrorStatus```
+3. ```ResetErrorStatus```
 
     Jest to metoda kasująca wszystkie dotychczasowo ustawione błędy na urządzeniu (wraz z opcją ```EmergencyStop```) w przypadku ręcznego wywołania funkcji (Invoke method) jako DirectMethod na urządzeniu w IoTHub:
     
     ![obraz](https://github.com/user-attachments/assets/18441e36-591e-487e-95c5-358c0c7c37bf)
-    
+
+    Przykładowa wiadomość na konsoli:
+
+    ```
+    METHOD EXECUTED: ResetErrorStatus on Device 1
+    ```
+
     Przykładowy widok z symulatora:
     
       Przed wywołaniem metody:
@@ -185,13 +253,14 @@ Program umożliwia wywołanie dwóch metod bezpośrednich z urządzenia w IoTHub
 
 3. ```DefaultMethod```
 
-    Jest to metoda wykonywana gdy na urządzeniu w IoTHub zostanie wywołana metoda nieistniejąca. 
-    
-    
+    Jest to metoda wykonywana, gdy na urządzeniu w IoTHub zostanie wywołana metoda nieistniejąca. 
+
+    ![obraz](https://github.com/user-attachments/assets/9c007fa5-0199-4b77-9b6c-6b274fc588c5)
+
     W przypadku wykonania takiej metody, na konsoli zostanie wyświetlona przykładowo poniższa informacja:
     
     ```
-    UNKNOWN METHOD EXECUTED: NewMethod on Device1
+    UNKNOWN METHOD EXECUTED: NewMethod on Device 2
     ```
 
 ### Kalkulacje
@@ -262,7 +331,7 @@ Program umożliwia prowadzenie trzech rodzajów kalkulacji:
     Server OPC UA -> Aplikacja agenta -> IoTHub -> Azure Stream Analytics -> ServiceBus (/device-errors-queue)
     ```
     
-    W momencie pojawienie się nowego błędu na urządzeniu, wysyłana jest pojedyncza wiadomość do IoTHub. Program za pomocą specjalnego zapytania w usłudze ASA, zlicza ilość tych wiadomości w ciągu ostatniej minuty. Gdy obliczona suma wynosi powyżej 3, dane są przesyłane i przechowywane w kolejce ServiceBus Queue (```/device-errors-queue```).
+    W momencie pojawienia się nowego błędu na urządzeniu, wysyłana jest pojedyncza wiadomość do IoTHub. Program za pomocą specjalnego zapytania w usłudze ASA, zlicza ilość tych wiadomości w ciągu ostatniej minuty. Gdy obliczona suma wynosi powyżej 3, dane są przesyłane i przechowywane w kolejce ServiceBus Queue (```/device-errors-queue```).
     
     Wykorzystane zapytanie w Stream Analytics Job:
     ```sql
@@ -297,7 +366,7 @@ Program implementuje logikę biznesową w 3 różnych sytuacjach:
 
 2.	Wywołanie metody EmergencyStop
 
-    Na podstawie danych zapisanych w kolejce ServiceBus Queue (device-errors-queue) dotyczących ilości pojawiających się błędów z ostatniej minuty (powyżej 3 błędów), program wywołuje metodę bezpośrednią EmergencyStop, która zatrzymuje działanie urządzenia (opisane wyżej). 
+    Na podstawie danych zapisanych w kolejce ServiceBus Queue (device-errors-queue) dotyczących ilości pojawiających się błędów z ostatniej minuty (powyżej 3 błędów), program wywołuje metodę bezpośrednią EmergencyStop, która zatrzymuje działanie urządzenia. 
     
     W wyniku tego procesu wyświetlana jest informacja na konsoli:
     ```
@@ -307,7 +376,7 @@ Program implementuje logikę biznesową w 3 różnych sytuacjach:
 
 3.	Wysłanie maila z informacją o pojawieniu się nowego błędu
 
-    W momencie pojawienia się nowego błędu na urządzeniu, program wysyła maila do określonego odbiorcy z informacją jaki rodzaj błędu wystąpił i na którym urządzeniu. Schemat przetwarzania danych podczas wystąpienia błędu:
+    W momencie pojawienia się nowego błędu na urządzeniu, program wysyła maila do określonego w pliku konfiguracyjnym (```sharedsettings.json```) odbiorcy z informacją jaki rodzaj błędu wystąpił i na którym urządzeniu. Schemat przetwarzania danych podczas wystąpienia błędu:
     ```
     Server OPC UA -> Aplikacja agenta -> Azure Communication Services -> Email Communication Services -> Email
     ```
